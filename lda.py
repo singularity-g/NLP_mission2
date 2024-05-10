@@ -139,19 +139,13 @@ if __name__ == '__main__':
     word_cor = [word_corpus[i] for i in sample_labels]
     word_label = [word_label_ids[i] for i in sample_labels]
     id2word = corpora.Dictionary(word_cor)
-    train_word, test_word, train_word_labels, test_word_labels = train_test_split(word_cor, word_label,
-                                                                                  test_size=0.1, random_state=42)
-    train_cor = [id2word.doc2bow(text) for text in train_word]
-    test_cor = [id2word.doc2bow(text) for text in test_word]
-    lda_model = models.ldamodel.LdaModel(corpus=train_cor, num_topics=topics, id2word=id2word,
+    data_cor = [id2word.doc2bow(text) for text in word_cor]
+    lda_model = models.ldamodel.LdaModel(corpus=data_cor, num_topics=topics, id2word=id2word,
                                          random_state=42, chunksize=800, passes=10,
                                          alpha='auto', per_word_topics=True, dtype=np.float64)
-    train_para_topic = para_t_freq(lda_model, train_cor)
-    test_para_topic = para_t_freq(lda_model, test_cor)
-    total_para_topic = train_para_topic+test_para_topic
-    total_labels = train_word_labels+test_word_labels
+    data_para_topic = para_t_freq(lda_model,data_cor)
     classifier = SVC()
-    scores = np.mean(cross_val_score(classifier, total_para_topic, total_labels, cv=10, scoring='accuracy', n_jobs=-1))
+    scores = np.mean(cross_val_score(classifier, data_para_topic, word_label, cv=10, scoring='accuracy', n_jobs=-1))
     print("word Accuracy:", scores)
 
     "字"
@@ -171,17 +165,11 @@ if __name__ == '__main__':
     char_cor = [char_corpus[i] for i in sample_labels]
     char_label = [char_label_ids[i] for i in sample_labels]
     id2word = corpora.Dictionary(char_cor)
-    train_char, test_char, train_char_labels, test_char_labels = train_test_split(char_cor, char_label,
-                                                                                  test_size=0.1, random_state=42)
-    train_cor = [id2word.doc2bow(text) for text in train_char]
-    test_cor = [id2word.doc2bow(text) for text in test_char]
-    lda_model = models.ldamodel.LdaModel(corpus=train_cor, num_topics=topics, id2word=id2word,
+    data_cor = [id2word.doc2bow(text) for text in char_cor]
+    lda_model = models.ldamodel.LdaModel(corpus=data_cor, num_topics=topics, id2word=id2word,
                                          random_state=42, chunksize=800, passes=10,
                                          alpha='auto', per_word_topics=True, dtype=np.float64)
-    train_para_topic = para_t_freq(lda_model, train_cor)
-    test_para_topic = para_t_freq(lda_model, test_cor)
-    total_para_topic = train_para_topic+test_para_topic
-    total_labels = train_word_labels+test_word_labels
+    data_para_topic = para_t_freq(lda_model,data_cor)
     classifier = SVC()
-    scores = np.mean(cross_val_score(classifier, total_para_topic, total_labels, cv=10, scoring='accuracy', n_jobs=-1))
+    scores = np.mean(cross_val_score(classifier, data_para_topic, char_label, cv=10, scoring='accuracy', n_jobs=-1))
     print("char Accuracy:", scores)
