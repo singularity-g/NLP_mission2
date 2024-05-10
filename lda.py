@@ -1,22 +1,14 @@
-import math
 import jieba
 import os  # 用于处理文件路径
-import random
 import numpy as np
-from gensim import corpora, models
+from gensim import corpora
 import pickle
-from gensim.matutils import corpus2csc
 from gensim import models
-from gensim.corpora import Dictionary
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import LabelEncoder
-from collections import defaultdict
-from gensim.models import LdaModel
 
 def content_deal(content):
-    ad = '本书来自www.cr173.com免费txt小说下载站\n更多更新免费电子书请关注www.cr173.com'
+    ad = '本书来自www.cr173.com免费txt小说下载站\n更多更新免费电子书请关注www.cr173.com'  #去除无意义的广告词
     content = content.replace(ad, '')
     content = content.replace("\u3000", '')
     return content
@@ -46,24 +38,6 @@ def read_novel(path,stop_word_list):
             word_list[file_name] = word
 
     return char_list, word_list
-
-def fenci_method(data_list,data_label_ids):
-    fenci_word = []
-    fenci_word_label = []
-    fenci_char = []
-    fenci_char_label = []
-
-    for index, text in enumerate(data_list):
-        fenci = [word for word in jieba.lcut(sentence=text) if word not in stop_word_list]
-        fenci_word.append(fenci)
-        fenci_word_label.append(data_label_ids[index])
-        # 字模式
-        t = []
-        for word1 in fenci:
-            t.extend([char for char in word1])
-        fenci_char.append(t)
-        fenci_char_label.append(data_label_ids[index])
-    return fenci_word[:100],fenci_word_label[:100],fenci_char[:100],fenci_char_label[:100]
 
 def dic_matrix(fenci_word,fenci_char):
     dic_word = corpora.Dictionary(fenci_word)
@@ -108,19 +82,21 @@ if __name__ == '__main__':
     stop_word_file = r"cn_stopwords.txt"
     punctuation_file = r"cn_punctuation.txt"
     ll = r"data/"
-    # 读取停词列表
-    stop_word_list = []
-    with open(stop_word_file, 'r', encoding='utf-8') as f:
-        for line in f:
-            stop_word_list.append(line.strip())
-    stop_word_list.extend("\u3000")
-    stop_word_list.extend(['～', ' ', '没', '听', '一声', '道', '见', '中', '便', '说', '一个', '说道'])
-    # 读取段落
+
+    """语料库预处理，第一次运行，之后可省略"""
+    # # 读取停词列表
+    # stop_word_list = []
+    # with open(stop_word_file, 'r', encoding='utf-8') as f:
+    #     for line in f:
+    #         stop_word_list.append(line.strip())
+    # stop_word_list.extend("\u3000")
+    # stop_word_list.extend(['～', ' ', '没', '听', '一声', '道', '见', '中', '便', '说', '一个', '说道'])
+    # # 读取段落
     # char_dict, word_dict = read_novel(ll,stop_word_list)
     # with open('word_dict.pkl', 'wb') as f:
     #     pickle.dump(word_dict, f)
-    # with open('char_dict.pkl', 'wb') as f:
     #     pickle.dump(char_dict, f)
+    """语料库预处理，第一次运行，之后可省略"""
 
     with open('word_dict.pkl', 'rb') as f:
         word_dict = pickle.load(f)
@@ -131,8 +107,11 @@ if __name__ == '__main__':
                   '天龙八部', '侠客行', '笑傲江湖', '雪山飞狐', '倚天屠龙记', '鸳鸯刀', '越女剑']
     book_names_id = {name: i for i, name in enumerate(book_names)}
     # data_label_ids = [book_names_id[label] for label in data_label]
-    tokens = 1000
-    topics = 400
+
+    tokens = 1000  # 修改这两项得到不同的分类效果
+    topics = 200
+    print("token length:",tokens)
+    print("topic num:",topics)
     "词"
     word_corpus = []
     word_labels = []
@@ -161,9 +140,12 @@ if __name__ == '__main__':
                                          alpha='auto', per_word_topics=True, dtype=np.float64)
     train_para_topic = para_t_freq(lda_model, train_cor)
     test_para_topic = para_t_freq(lda_model, test_cor)
+    total_para_topic = train_para_topic+test_para_topic
+    total_labels = train_word_labels+test_word_labels
     classifier = SVC()
-    accuracy = np.mean(cross_val_score(classifier, train_para_topic+test_para_topic, train_word_labels+test_word_labels, cv=10))
+    accuracy = np.mean(cross_val_score(classifier, total_para_topic, total_labels, cv=10))
     print("word Accuracy:", accuracy)
+
     "字"
     char_corpus = []
     char_labels = []
@@ -192,7 +174,9 @@ if __name__ == '__main__':
                                          alpha='auto', per_word_topics=True, dtype=np.float64)
     train_para_topic = para_t_freq(lda_model, train_cor)
     test_para_topic = para_t_freq(lda_model, test_cor)
+    total_para_topic = train_para_topic+test_para_topic
+    total_labels = train_word_labels+test_word_labels
     classifier = SVC()
     accuracy = np.mean(
-        cross_val_score(classifier, train_para_topic + test_para_topic, train_char_labels + test_char_labels, cv=10))
+        cross_val_score(classifier, total_para_topic, total_labels, cv=10))
     print("char Accuracy:", accuracy)
