@@ -92,16 +92,18 @@ if __name__ == '__main__':
 
     """语料库预处理，第一次运行，之后可省略"""
     # # 读取停词列表
-    # stop_word_list = []
-    # with open(stop_word_file, 'r', encoding='utf-8') as f:
-    #     for line in f:
-    #         stop_word_list.append(line.strip())
-    # stop_word_list.extend("\u3000")
-    # stop_word_list.extend(['～', ' ', '没', '听', '一声', '道', '见', '中', '便', '说', '一个', '说道'])
-    # # 读取段落
+    stop_word_list = []
+    with open(stop_word_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            stop_word_list.append(line.strip())
+    stop_word_list.extend("\u3000")
+    stop_word_list.extend(['～', ' ', '没', '听', '一声', '道', '见', '中', '便', '说', '一个', '说道'])
+    # 读取段落
+    # 处理前删除文件夹内inf.txt
     # char_dict, word_dict = read_novel(ll,stop_word_list)
     # with open('word_dict.pkl', 'wb') as f:
     #     pickle.dump(word_dict, f)
+    # with open('char_dict.pkl', 'wb') as f:
     #     pickle.dump(char_dict, f)
     """语料库预处理，第一次运行，之后可省略"""
 
@@ -117,19 +119,17 @@ if __name__ == '__main__':
     # data_label_ids = [book_names_id[label] for label in data_label]
 
     tokens = 1000  # 修改这两项得到不同的分类效果
-    topics = 200
+    topics = 500
     print("token length:",tokens)
     print("topic num:",topics)
     "词"
     word_corpus = []
     word_labels = []
-    for file_name,para in word_dict.items():
+    for file_name, para in word_dict.items():
         word = []
         for words in para:
             word.extend(words)
-            if len(word) < tokens:
-                continue
-            else:
+            if len(word) > tokens:
                 word_corpus.append(word[:tokens])
                 word_labels.append(file_name)
                 word = []
@@ -161,9 +161,7 @@ if __name__ == '__main__':
         char = []
         for chars in para:
             char.extend(chars)
-            if len(char) < tokens:
-                continue
-            else:
+            if len(char) > tokens:
                 char_corpus.append(char[:tokens])
                 char_labels.append(file_name)
                 char = []
