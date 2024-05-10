@@ -48,12 +48,19 @@ def dic_matrix(fenci_word,fenci_char):
 
 def para_t_freq(lda_word, cor_word):
     para_topic = []
+    # 注释部分用于打印高频词，不建议在长文本的情况下使用
+    # count = 0
     for i in cor_word:
+        # count += 1
         topic = lda_word.get_document_topics(i)
         init = np.zeros(lda_word.num_topics)
+        # topic_words = []
         for ii, value in topic:
             init[ii] = value
+            # topic_words.append(lda_word.print_topic(ii, topn=10))
         para_topic.append(init)
+        # if count < 6:
+        #     print(topic_words)  # 打印高频词
     return para_topic
 
 
@@ -98,6 +105,7 @@ if __name__ == '__main__':
     #     pickle.dump(char_dict, f)
     """语料库预处理，第一次运行，之后可省略"""
 
+    """直接读取保存的数据"""
     with open('word_dict.pkl', 'rb') as f:
         word_dict = pickle.load(f)
     with open('char_dict.pkl', 'rb') as f:
@@ -136,15 +144,15 @@ if __name__ == '__main__':
     train_cor = [id2word.doc2bow(text) for text in train_word]
     test_cor = [id2word.doc2bow(text) for text in test_word]
     lda_model = models.ldamodel.LdaModel(corpus=train_cor, num_topics=topics, id2word=id2word,
-                                         random_state=100, chunksize=800, passes=10,
+                                         random_state=42, chunksize=800, passes=10,
                                          alpha='auto', per_word_topics=True, dtype=np.float64)
     train_para_topic = para_t_freq(lda_model, train_cor)
     test_para_topic = para_t_freq(lda_model, test_cor)
     total_para_topic = train_para_topic+test_para_topic
     total_labels = train_word_labels+test_word_labels
     classifier = SVC()
-    accuracy = np.mean(cross_val_score(classifier, total_para_topic, total_labels, cv=10))
-    print("word Accuracy:", accuracy)
+    scores = np.mean(cross_val_score(classifier, total_para_topic, total_labels, cv=10, scoring='accuracy', n_jobs=-1))
+    print("word Accuracy:", scores)
 
     "字"
     char_corpus = []
@@ -170,13 +178,12 @@ if __name__ == '__main__':
     train_cor = [id2word.doc2bow(text) for text in train_char]
     test_cor = [id2word.doc2bow(text) for text in test_char]
     lda_model = models.ldamodel.LdaModel(corpus=train_cor, num_topics=topics, id2word=id2word,
-                                         random_state=100, chunksize=800, passes=10,
+                                         random_state=42, chunksize=800, passes=10,
                                          alpha='auto', per_word_topics=True, dtype=np.float64)
     train_para_topic = para_t_freq(lda_model, train_cor)
     test_para_topic = para_t_freq(lda_model, test_cor)
     total_para_topic = train_para_topic+test_para_topic
     total_labels = train_word_labels+test_word_labels
     classifier = SVC()
-    accuracy = np.mean(
-        cross_val_score(classifier, total_para_topic, total_labels, cv=10))
-    print("char Accuracy:", accuracy)
+    scores = np.mean(cross_val_score(classifier, total_para_topic, total_labels, cv=10, scoring='accuracy', n_jobs=-1))
+    print("char Accuracy:", scores)
